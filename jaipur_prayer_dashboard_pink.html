@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jaipur Prayer Dashboard</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(145deg, #fffafd 0%, #fff 52%, #fdf1f8 100%);
+    color: #9b858f;
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+  }
+  .wrap { width: min(620px, 100%); margin: auto; padding: 20px; }
+  .dashboard {
+    background: rgba(255,255,255,.92);
+    border: 1px solid #f2d9e7;
+    border-radius: 24px;
+    padding: 25px;
+    box-shadow: 0 14px 40px rgba(205,150,181,.12);
+  }
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 22px;
+  }
+  .eyebrow {
+    color: #e7a8cf;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  h1 {
+    margin: 0;
+    color: #806c75;
+    font-size: 29px;
+    font-weight: normal;
+    font-style: normal;
+  }
+  .subtitle { margin-top: 6px; font-size: 14px; }
+  .moon {
+    width: 47px; height: 47px;
+    border-radius: 50%;
+    background: #fff3fa;
+    border: 1px solid #f1d3e4;
+    display: grid; place-items: center;
+    color: #e5a5ca;
+    font-size: 23px;
+  }
+  .datebox {
+    background: #fff6fb;
+    border: 1px solid #f5deea;
+    border-radius: 15px;
+    padding: 12px 15px;
+    margin-bottom: 18px;
+  }
+  .date { color: #9a818c; font-size: 14px; }
+  .hijri { color: #dca0c5; font-size: 12px; margin-top: 3px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 11px;
+  }
+  .prayer {
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #f1dce7;
+    border-radius: 17px;
+    padding: 15px 10px;
+    text-align: center;
+    transition: transform .2s;
+  }
+  .prayer:hover { transform: translateY(-2px); }
+  .prayer:before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: #edb1da;
+    opacity: .75;
+  }
+  .icon { font-style: normal; font-size: 17px; color: #e8acd0; margin-bottom: 5px; }
+  .name { color: #9d858f; font-size: 13px; }
+  .time { color: #75636c; font-size: 19px; font-style: normal; margin-top: 5px; }
+  .footer {
+    margin-top: 18px;
+    padding-top: 15px;
+    border-top: 1px solid #f2e3ea;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 11px;
+  }
+  .method { color: #c393ad; }
+  .location { color: #b29ba5; }
+  @media (max-width: 430px) {
+    .wrap { padding: 10px; }
+    .dashboard { padding: 18px; border-radius: 20px; }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    h1 { font-size: 25px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="dashboard">
+    <div class="top">
+      <div>
+        <div class="eyebrow">daily ibadah</div>
+        <h1>Prayer timings</h1>
+        <div class="subtitle">A little pause for every prayer ♡</div>
+      </div>
+      <div class="moon">☾</div>
+    </div>
+
+    <div class="datebox">
+      <div class="date" id="date">Loading date…</div>
+      <div class="hijri" id="hijri">Jaipur · India</div>
+    </div>
+
+    <div class="grid" id="times">
+      <div class="prayer"><div class="icon">☽</div><div class="name">Fajr</div><div class="time">—</div></div>
+      <div class="prayer"><div class="icon">☼</div><div class="name">Sunrise</div><div class="time">—</div></div>
+      <div class="prayer"><div class="icon">☀</div><div class="name">Dhuhr</div><div class="time">—</div></div>
+      <div class="prayer"><div class="icon">◒</div><div class="name">Asr</div><div class="time">—</div></div>
+      <div class="prayer"><div class="icon">◐</div><div class="name">Maghrib</div><div class="time">—</div></div>
+      <div class="prayer"><div class="icon">☾</div><div class="name">Isha</div><div class="time">—</div></div>
+    </div>
+
+    <div class="footer">
+      <span class="method">Umm al-Qura · Standard madhab</span>
+      <span class="location">26.92° N · 75.79° E</span>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadPrayerTimes() {
+  const now = new Date();
+  const date = now.toISOString().slice(0,10);
+  document.getElementById("date").textContent =
+    now.toLocaleDateString("en-IN", {
+      weekday:"long", day:"numeric", month:"long", year:"numeric"
+    });
+
+  try {
+    const url = `https://api.aladhan.com/v1/timings/${date}?latitude=26.92&longitude=75.79&method=4&school=0`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const t = data.data.timings;
+    const hijri = data.data.date.hijri;
+    document.getElementById("hijri").textContent =
+      `${hijri.day} ${hijri.month.en} ${hijri.year} AH · Jaipur, India`;
+
+    const prayers = [
+      ["☽","Fajr",t.Fajr], ["☼","Sunrise",t.Sunrise],
+      ["☀","Dhuhr",t.Dhuhr], ["◒","Asr",t.Asr],
+      ["◐","Maghrib",t.Maghrib], ["☾","Isha",t.Isha]
+    ];
+
+    document.getElementById("times").innerHTML = prayers.map(p => `
+      <div class="prayer">
+        <div class="icon">${p[0]}</div>
+        <div class="name">${p[1]}</div>
+        <div class="time">${p[2]}</div>
+      </div>
+    `).join("");
+  } catch(e) {
+    document.getElementById("hijri").textContent = "Jaipur · India";
+  }
+}
+loadPrayerTimes();
+</script>
+</body>
+</html>
